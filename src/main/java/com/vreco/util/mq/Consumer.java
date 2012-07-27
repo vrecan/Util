@@ -7,7 +7,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
  * Basic connection library to connect to AMQ and consume messages.
  * @author Ben Aldrich
  */
-public class Consumer {
+public class Consumer implements AutoCloseable {
 
   private MessageConsumer consumer;
   private Connection connection;
@@ -122,6 +122,7 @@ public class Consumer {
    *
    * @throws JMSException
    */
+  @Override
   public void close() throws JMSException {
     connection.close();
   }
