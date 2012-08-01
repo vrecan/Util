@@ -31,7 +31,7 @@ public class ConsumerTest extends TestCase {
     String url = "vm://localhost";
     String queue = "tempQ";
     Consumer instance = new Consumer();
-    instance.connect(url, queue);
+    instance.connectToQueue(url, queue);
     instance.close();
   }
 
@@ -43,7 +43,7 @@ public class ConsumerTest extends TestCase {
     String url = "vm://localhost";
     String queue = "tempQ";
     Consumer instance = new Consumer();
-    instance.connect(url, queue);
+    instance.connectToQueue(url, queue);
     Destination destination = instance.getDestination();
     if(destination == null) {
       throw new Exception("Destination null");
