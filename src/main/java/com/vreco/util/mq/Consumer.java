@@ -5,6 +5,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 
 /**
  * Basic connection library to connect to AMQ and consume messages.
+ *
  * @author Ben Aldrich
  */
 public class Consumer implements AutoCloseable {
@@ -15,48 +16,41 @@ public class Consumer implements AutoCloseable {
   private Destination destination;
   private boolean tempQueue = false;
   private boolean transactions = false;
+  private boolean persistence = false;
   private long timeout = 5000;
+  private String url;
 
-  public Consumer() {
+  public Consumer(String url) {
+    this.url = url;
   }
 
-  public void connect(String url, String queue) throws JMSException {
+  public void connect(String type, String queue) throws JMSException {
+    setConnection();
+    setSession();
+    destination =  session.createQueue(queue);
+    consumer = session.createConsumer(destination);
+  }
+
+  public void connect(String type, String queue, Connection connection) throws JMSException {
+    this.connection = connection;
+    setSession();
+    destination =  session.createQueue(queue);
+    consumer = session.createConsumer(destination);
+  }
+
+  protected void setSession() throws JMSException {
+    if (session == null) {
+      session = connection.createSession(transactions, Session.CLIENT_ACKNOWLEDGE);
+    }
+  }
+
+  protected void setConnection() throws JMSException {
     ConnectionFactory connectionFactory =
             new ActiveMQConnectionFactory(url);
     connection = connectionFactory.createConnection();
     connection.start();
-    session = connection.createSession(transactions,
-            Session.CLIENT_ACKNOWLEDGE);
-    destination = getDestination(session, queue);
-    consumer = session.createConsumer(destination);
   }
 
-  public void connect(String queue, Connection connection) throws JMSException {
-    this.connection = connection;
-    session = this.connection.createSession(transactions,
-            Session.CLIENT_ACKNOWLEDGE);
-    destination = getDestination(session, queue);
-    consumer = session.createConsumer(destination);
-  }
-
-  /**
-   * Get destination object.
-   *
-   * @param session
-   * @param queue
-   * @return
-   * @throws JMSException
-   */
-  public Destination getDestination(final Session session, final String queue) throws JMSException {
-    Destination dest;
-    if (tempQueue) {
-      TemporaryQueue temporaryQueue = session.createTemporaryQueue();
-      dest = temporaryQueue;
-    } else {
-      dest = session.createQueue(queue);
-    }
-    return dest;
-  }
 
   /**
    * Get a Text message.
@@ -122,7 +116,20 @@ public class Consumer implements AutoCloseable {
    *
    * @throws JMSException
    */
+  @Override
   public void close() throws JMSException {
-    connection.close();
+    try {
+    if(consumer != null) {
+      consumer.close();
+    }
+    if(session != null) {
+      session.close();
+    }
+    if(connection != null) {
+      connection.close();
+    }
+    } catch (Exception e) {
+      //loghere
+    }
   }
 }

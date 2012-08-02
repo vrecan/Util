@@ -8,6 +8,7 @@ import junit.framework.TestCase;
  * @author Ben Aldrich
  */
 public class ConsumerTest extends TestCase {
+    private String vmUrl = "vm://localhost?broker.persistent=false";
     
     public ConsumerTest(String testName) {
         super(testName);
@@ -28,11 +29,10 @@ public class ConsumerTest extends TestCase {
    */
   public void testConnect() throws Exception {
     System.out.println("connect");
-    String url = "vm://localhost";
     String queue = "tempQ";
-    Consumer instance = new Consumer();
-    instance.connectToQueue(url, queue);
-    instance.close();
+    try (Consumer instance = new Consumer(vmUrl)) {
+      instance.connect("queue", queue);
+    }
   }
 
   /**
@@ -40,14 +40,13 @@ public class ConsumerTest extends TestCase {
    */
   public void testGetDestination_Session_String() throws Exception {
     System.out.println("getDestination");
-    String url = "vm://localhost";
     String queue = "tempQ";
-    Consumer instance = new Consumer();
-    instance.connectToQueue(url, queue);
-    Destination destination = instance.getDestination();
-    if(destination == null) {
-      throw new Exception("Destination null");
+    try (Consumer instance = new Consumer(vmUrl)) {
+      instance.connect("queue", queue);
+      Destination destination = instance.getDestination();
+      if(destination == null) {
+        throw new Exception("Destination null");
+      }
     }
-    instance.close();
   }
 }
