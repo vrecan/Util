@@ -1,81 +1,120 @@
 package com.vreco.util.mq;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-
-import org.apache.activemq.ActiveMQConnectionFactory;
-
 import com.vreco.util.Util;
+import java.util.HashMap;
+import javax.jms.*;
+import org.apache.activemq.ActiveMQConnectionFactory;
 
 /**
  * @author mgolowka
  */
 public class Producer implements AutoCloseable {
 
-  private String            url;
+  private String url;
   private ConnectionFactory connectionFactory;
-  private Connection        connection;
-  private Session           session;
-  private Destination       destination;
-  private MessageProducer   producer;
-  private boolean           persistentMsgs;
-  private Destination       replyTo;
+  private Connection connection;
+  private Session session;
+  private Destination destination;
+  private MessageProducer producer;
+  private boolean persistentMsgs;
+  private Destination replyTo;
+  private HashMap<String, Destination> destinations = new HashMap();
+  private HashMap<String, MessageProducer> producers = new HashMap();
 
   public Producer(final String url) {
     this.url = url;
   }
 
   /**
-   * Connect to a Queue
-   *
+   * Connect to topc / queue.
+   * @param type
    * @param queue
-   * @param autoAcknowledge
-   * @param persistent
-   * @param replyTo
-   * @throws JMSException
+   * @throws JMSException 
    */
-  public void connectToQueue(final String queue, final boolean autoAcknowledge,
-      final boolean persistent, final Destination replyTo) throws JMSException {
-    createConnFactory();
-
-    session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-    destination = session.createQueue(queue);
-
-    producer = session.createProducer(destination);
-
-    this.persistentMsgs = persistent;
-    this.replyTo = replyTo;
+  public void connect(final String type, final String queue) throws JMSException {
+    setConnection();
+    setSession(type, queue);
+    setDestination(type, queue);
+    setProducer(type, queue);
   }
 
   /**
-   * Connect to topic
-   *
-   * @param topic
-   * @param autoAcknowledge
-   * @param persistent
-   * @param replyTo
-   * @throws JMSException
+   * set our session.
+   * @param type
+   * @param queue
+   * @throws JMSException 
    */
-  public void connectToTopic(final String topic, final boolean autoAcknowledge,
-      final boolean persistent, final Destination replyTo) throws JMSException {
-    createConnFactory();
-
-    session = connection.createSession(false, (autoAcknowledge ? Session.AUTO_ACKNOWLEDGE
-        : Session.CLIENT_ACKNOWLEDGE));
-    destination = session.createTopic(topic);
-
-    producer = session.createProducer(destination);
-
-    this.persistentMsgs = persistent;
-    this.replyTo = replyTo;
+  protected void setSession(final String type, final String queue) throws JMSException {    
+    if (session == null) {
+      //true/false == persistant
+      session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+    }    
   }
 
+
+  /**
+   * Set the destination, reuse old destinations if they exist.
+   * @param type
+   * @param destString
+   * @throws JMSException 
+   */
+  protected void setDestination(final String type, final String destString) throws JMSException {
+    if (destination == null) {
+      setDestinationByType(type, destString);
+    } else {
+      Destination previousDestination = destinations.get(destString);
+      if (previousDestination != null) {
+        destination = previousDestination;
+      } else {
+        setDestinationByType(type, destString);
+      }
+    }
+  }
+
+  protected void setDestinationByType(final String type, final String destString) throws JMSException {
+    switch (type) {
+      case "queue":
+        destination = session.createTopic(destString);
+        destinations.put(destString, destination);
+      case "topic":
+        destination = session.createQueue(destString);
+        destinations.put(destString, destination);
+    }
+  }
+
+  /**
+   * Set producer, re use old producers if it's for the same queue.
+   * @param type
+   * @param destString
+   * @throws JMSException 
+   */
+  protected void setProducer(final String type, final String destString) throws JMSException {
+    if (producer == null) {
+      setProducerByType(type, destString);
+    } else {
+      MessageProducer previousProducer = producers.get(destString);
+      if (previousProducer != null) {
+        producer = previousProducer;
+      } else {
+        setProducerByType(type, destString);
+      }
+    }
+
+  }
+
+  protected void setProducerByType(final String type, final String destString) throws JMSException {
+    switch (type) {
+      case "queue":
+        producer = session.createProducer(destination);
+        producers.put(destString, producer);
+      case "topic":
+        producer = session.createProducer(destination);
+        producers.put(destString, producer);
+    }
+
+  }
+
+  @Override
   public void close() {
     if (connection != null) {
       try {
@@ -102,7 +141,7 @@ public class Producer implements AutoCloseable {
     producer.send(msg);
   }
 
-  private void createConnFactory() throws JMSException {
+  private void setConnection() throws JMSException {
     if (connectionFactory == null) {
       connectionFactory = new ActiveMQConnectionFactory(url);
     }

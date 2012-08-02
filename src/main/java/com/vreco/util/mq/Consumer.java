@@ -1,18 +1,6 @@
 package com.vreco.util.mq;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-
+import javax.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 /**
@@ -32,39 +20,22 @@ public class Consumer implements AutoCloseable {
   public Consumer() {
   }
 
-  public void connectToQueue(final String url, final String queue) throws JMSException {
+  public void connect(String url, String queue) throws JMSException {
     ConnectionFactory connectionFactory =
             new ActiveMQConnectionFactory(url);
     connection = connectionFactory.createConnection();
     connection.start();
     session = connection.createSession(transactions,
             Session.CLIENT_ACKNOWLEDGE);
-    destination = getQueue(session, queue);
+    destination = getDestination(session, queue);
     consumer = session.createConsumer(destination);
   }
 
-  public void connectToQueue(final String queue, final Connection connection) throws JMSException {
+  public void connect(String queue, Connection connection) throws JMSException {
     this.connection = connection;
     session = this.connection.createSession(transactions,
             Session.CLIENT_ACKNOWLEDGE);
-    destination = getQueue(session, queue);
-    consumer = session.createConsumer(destination);
-  }
-
-  /**
-   *
-   *
-   * @author Michael Golowka
-   * @param url
-   * @param topic
-   * @throws JMSException
-   */
-  public void connectToTopic(final String url, final String topic) throws JMSException {
-    ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
-    connection = connectionFactory.createConnection();
-    connection.start();
-    session = connection.createSession(transactions, Session.CLIENT_ACKNOWLEDGE);
-    destination = getTopic(session, topic);
+    destination = getDestination(session, queue);
     consumer = session.createConsumer(destination);
   }
 
@@ -76,32 +47,13 @@ public class Consumer implements AutoCloseable {
    * @return
    * @throws JMSException
    */
-  public Destination getQueue(final Session session, final String queue) throws JMSException {
+  public Destination getDestination(final Session session, final String queue) throws JMSException {
     Destination dest;
     if (tempQueue) {
       TemporaryQueue temporaryQueue = session.createTemporaryQueue();
       dest = temporaryQueue;
     } else {
       dest = session.createQueue(queue);
-    }
-    return dest;
-  }
-
-  /**
-   * Get destination object.
-   *
-   * @param session
-   * @param queue
-   * @return
-   * @throws JMSException
-   */
-  public Destination getTopic(final Session session, final String topic) throws JMSException {
-    Destination dest;
-    if (tempQueue) {
-      TemporaryTopic temporaryTopic = session.createTemporaryTopic();
-      dest = temporaryTopic;
-    } else {
-      dest = session.createTopic(topic);
     }
     return dest;
   }
@@ -144,7 +96,7 @@ public class Consumer implements AutoCloseable {
     return destination;
   }
 
-  public void setTimeout(final long t) {
+  public void setTimeout(long t) {
     timeout = t;
   }
 
@@ -157,24 +109,12 @@ public class Consumer implements AutoCloseable {
    *
    * @param bool
    */
-  public void setUseTransactions(final Boolean bool) {
+  public void setUseTransactions(Boolean bool) {
     transactions = bool;
   }
 
-  public void setUseTemporaryQueue(final boolean bool) {
+  public void setUseTemporaryQueue(boolean bool) {
     tempQueue = bool;
-  }
-
-  public void subscribeToTopic(final String url, final String topic) throws JMSException {
-    ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
-    connection = connectionFactory.createConnection();
-    connection.setClientID("mgolowka");
-    connection.start();
-    session = connection.createSession(transactions, Session.CLIENT_ACKNOWLEDGE);
-//    destination = getTopic(session, topic);
-    Topic t = session.createTopic(topic);
-
-    consumer = session.createDurableSubscriber(t, "mgolowka.subscriber");
   }
 
   /**
@@ -182,7 +122,6 @@ public class Consumer implements AutoCloseable {
    *
    * @throws JMSException
    */
-  @Override
   public void close() throws JMSException {
     connection.close();
   }
