@@ -103,23 +103,6 @@ public class Producer implements AutoCloseable {
 
   }
 
-  @Override
-  public void close() {
-    try{
-    if(producer != null) {
-      producer.close();
-    }
-    if(session != null) {
-      session.close();
-    }
-    if(connection != null) {
-      connection.close();
-    }
-    } catch (Exception e){
-      //loghere
-    }
-  }
-
   public void sendMessage(final String message) throws JMSException {
     if (message == null) {
       return;
@@ -136,7 +119,7 @@ public class Producer implements AutoCloseable {
     if (reply != null) {
       msg.setJMSReplyTo(reply);
     }
-    producer.send(msg);    
+    producer.send(msg);
   }
 
   private void setConnection() throws JMSException {
@@ -164,4 +147,21 @@ public class Producer implements AutoCloseable {
   public Destination getDestination() {
     return destination;
   }
+  
+  @Override
+  public void close() {
+    try {
+      if (producer != null) {
+        producer.close();
+      }
+      if (session != null) {
+        session.close();
+      }
+      if (connection != null) {
+        connection.close();
+      }
+    } catch (Exception e) {
+      //loghere
+    }
+  }  
 }
