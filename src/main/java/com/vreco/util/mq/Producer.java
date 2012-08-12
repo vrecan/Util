@@ -67,6 +67,12 @@ public class Producer implements AutoCloseable {
     }
   }
 
+  /**
+   * Set the destination based on the type.
+   * @param type
+   * @param destString
+   * @throws JMSException 
+   */
   protected void setDestinationByType(final String type, final String destString) throws JMSException {
     switch (type) {
       case "queue":
@@ -97,12 +103,22 @@ public class Producer implements AutoCloseable {
     setPersistence(persistence);
   }
 
+  /**
+   * Set our producer with our destination.
+   * @param destString
+   * @throws JMSException 
+   */
   protected void setProducerWithDestination(final String destString) throws JMSException {
     producer = session.createProducer(destination);
     producers.put(destString, producer);
 
   }
 
+  /**
+   * Send a TextMessage.
+   * @param message
+   * @throws JMSException 
+   */
   public void sendMessage(final String message) throws JMSException {
     if (message == null) {
       return;
@@ -111,6 +127,12 @@ public class Producer implements AutoCloseable {
     producer.send(msg);
   }
 
+  /**
+   * Send a TextMessage overriding the destination.
+   * @param message
+   * @param reply
+   * @throws JMSException 
+   */
   public void sendMessage(final String message, final Destination reply) throws JMSException {
     if (message == null) {
       return;
@@ -122,6 +144,10 @@ public class Producer implements AutoCloseable {
     producer.send(msg);
   }
 
+  /**
+   * Set our connection factory object.
+   * @throws JMSException 
+   */
   private void setConnection() throws JMSException {
     if (connectionFactory == null) {
       connectionFactory = new ActiveMQConnectionFactory(url);
@@ -132,7 +158,23 @@ public class Producer implements AutoCloseable {
       connection.start();
     }
   }
+  
+  /**
+   * Set ttl on current producer.
+   * @param ttl
+   * @throws JMSException 
+   */
+  public void setTTL(long ttl) throws JMSException {
+    if (producer != null) {
+      producer.setTimeToLive(ttl);
+    }
+  }
 
+  /**
+   * Set persistence on the current producer.
+   * @param persistence
+   * @throws JMSException 
+   */
   public void setPersistence(final boolean persistence) throws JMSException {
     this.persistence = persistence;
     if (producer != null) {
@@ -144,10 +186,17 @@ public class Producer implements AutoCloseable {
     }
   }
 
+  /**
+   * Get the current destination object.
+   * @return 
+   */
   public Destination getDestination() {
     return destination;
   }
-  
+
+  /**
+   * Close our connection.
+   */
   @Override
   public void close() {
     try {
@@ -163,5 +212,5 @@ public class Producer implements AutoCloseable {
     } catch (Exception e) {
       //loghere
     }
-  }  
+  }
 }
