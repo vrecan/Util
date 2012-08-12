@@ -13,8 +13,8 @@ import org.junit.Ignore;
  * @author Ben Aldrich
  */
 public class ProducerTest extends TestCase {
-  private final String vmUrl = "vm://localhost?broker.persistent=false";
 
+  private final String vmUrl = "vm://localhost?broker.persistent=false";
   //private final String vmUrl = "tcp://localhost:61616?jms.prefetchPolicy.all=5";
   private Consumer consumer;
   private Producer producer;
@@ -142,4 +142,39 @@ public class ProducerTest extends TestCase {
       throw new IOException("NO message found!");
     }
   }
+
+  /**
+   * Test of testSetTTLMsg method, of class Producer.
+   */
+  public void testSetTTLMsgTrue() throws Exception {
+
+    producer.connect("queue", "testQ");
+    consumer.connect("queue", "testQ");
+    producer.setTTL(100);
+    producer.sendMessage("testT");
+    Thread.sleep(300);
+    consumer.setTimeout(2000);
+    TextMessage msg = consumer.getTextMessage();
+
+    if (msg != null) {
+      throw new IOException("Message found when none should exist!");
+    }
+  }
+  
+  /**
+   * Test of testSetTTLMsg method, of class Producer.
+   */
+  public void testSetTTLMsgFalse() throws Exception {
+
+    producer.connect("queue", "testQ");
+    consumer.connect("queue", "testQ");
+    producer.setTTL(1000);
+    producer.sendMessage("testT");
+    Thread.sleep(300);
+    consumer.setTimeout(2000);
+    TextMessage msg = consumer.getTextMessage();
+    if (msg == null) {
+      throw new IOException("Message found when none should exist!");
+    }
+  }  
 }
