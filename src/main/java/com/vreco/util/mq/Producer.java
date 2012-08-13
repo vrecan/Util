@@ -187,6 +187,10 @@ public class Producer implements AutoCloseable {
     }
   }
   
+  /**
+   * This sets use async on the entire connection.
+   * @param async 
+   */
   public void setUseAsyncSend(boolean async) {
     ((ActiveMQConnection)connection).setUseAsyncSend(async);
   }
