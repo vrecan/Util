@@ -2,6 +2,7 @@ package com.vreco.util.mq;
 
 import java.util.HashMap;
 import javax.jms.*;
+import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 
 /**
@@ -184,6 +185,10 @@ public class Producer implements AutoCloseable {
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
       }
     }
+  }
+  
+  public void setUseAsyncSend(boolean async) {
+    ((ActiveMQConnection)connection).setUseAsyncSend(async);
   }
 
   /**
